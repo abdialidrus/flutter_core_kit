@@ -14,6 +14,7 @@ export 'feedback/error_state_widget.dart';
 
 export 'layout/app_card.dart';
 export 'layout/app_divider.dart';
+export 'layout/app_spacer.dart';
 export 'layout/section_header.dart';
 
 export 'data_display/app_avatar.dart';
