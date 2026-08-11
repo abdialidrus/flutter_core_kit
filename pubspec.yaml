@@ -3,7 +3,7 @@ description: >
   Shared, theme-driven core services and widgets for reuse across Flutter
   projects. Provides a brandable theme system, common UI widgets, networking,
   error handling, and architectural patterns.
-version: 1.0.1
+version: 1.0.2
 publish_to: none
 repository: https://github.com/abdialidrus/flutter_core_kit
 

@@ -1,5 +1,4 @@
 import 'package:core_kit/core_kit.dart';
-import 'package:core_kit/src/network/log_interceptor.dart';
 import 'package:dio/dio.dart';
 
 /// Dio Client for handling HTTP requests.
@@ -68,12 +67,14 @@ class DioClient {
     required Future<String?> Function() tokenProvider,
     String headerKey = 'Authorization',
     String Function(String token)? headerValueBuilder,
+    OnUnauthorizedCallback? onUnauthorized,
   }) {
     removeAuthInterceptor();
     _authInterceptor = AuthInterceptor(
       tokenProvider: tokenProvider,
       headerKey: headerKey,
       headerValueBuilder: headerValueBuilder ?? (token) => 'Bearer $token',
+      onUnauthorized: onUnauthorized,
     );
     _dio.interceptors.add(_authInterceptor!);
   }
