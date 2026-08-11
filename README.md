@@ -277,8 +277,18 @@ return ListView.builder(
 ```
 
 ### 4. Layout & Data Display (`widgets/layout/` & `widgets/data_display/`)
-Containers and list items with theme-aware borders and padding.
+Containers, list items, and spacing widgets with theme-aware values.
 ```dart
+// Semantic spacing
+Row(
+  children: [
+    const Text('Hello'),
+    const HSpace.sm(), // 8.0 horizontal spacing
+    const Text('World'),
+  ],
+)
+const VSpace.md(); // 12.0 vertical spacing
+
 AppCard(
   padding: const EdgeInsets.all(AppSpacing.md),
   child: Column(
