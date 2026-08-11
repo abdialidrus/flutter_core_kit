@@ -161,3 +161,215 @@ device icons) stay in each consuming app. The rule of thumb: if a widget
 needs mining/fleet or video-app domain knowledge to make sense, it doesn't
 belong in `core_kit` — build it as a thin wrapper on top of the primitives
 here instead (e.g. a `DeliveryStatusBadge` that wraps `AppBadge`).
+
+## Component Usage Guide
+
+### Typography & Text
+`core_kit` does not provide custom Text widgets. Instead, it relies on standard Flutter `Text` widgets combined with the injected `ThemeData.textTheme` defined by your `AppTypography` implementation. You can use the `BuildContextThemeX` extension to make accessing theme data much shorter.
+
+```dart
+// Using standard typography scales
+Text(
+  'Display Large',
+  style: context.textTheme.displayLarge,
+)
+
+Text(
+  'Body Medium',
+  style: context.textTheme.bodyMedium,
+)
+
+// The color is automatically bound to `textPrimary`, `textSecondary`, or `textTertiary` 
+// based on the style definition in `buildAppTheme`. To override:
+Text(
+  'Success Text',
+  style: context.textTheme.bodyMedium?.copyWith(
+    color: context.semanticColors?.success,
+  ),
+)
+```
+
+### 1. Buttons (`widgets/buttons/`)
+Maintain consistent call-to-action styling across the app.
+```dart
+PrimaryButton(
+  text: 'Submit',
+  onPressed: () => print('Submitted'),
+)
+
+SecondaryButton(
+  text: 'Cancel',
+  onPressed: () => Navigator.pop(context),
+)
+
+DangerButton(
+  text: 'Delete',
+  onPressed: () => deleteItem(),
+)
+
+AppIconButton(
+  icon: Icons.add,
+  onPressed: () => addItem(),
+)
+```
+
+### 2. Inputs (`widgets/inputs/`)
+Pre-styled input fields with consistent error states, borders, and typography.
+```dart
+AppTextField(
+  label: 'Email',
+  hintText: 'Enter your email',
+  controller: emailController,
+  keyboardType: TextInputType.emailAddress,
+)
+
+AppPasswordField(
+  label: 'Password',
+  controller: passwordController,
+)
+
+AppDropdown<String>(
+  label: 'Select Role',
+  value: selectedRole,
+  items: const [
+    DropdownMenuItem(value: 'admin', child: Text('Admin')),
+    DropdownMenuItem(value: 'user', child: Text('User')),
+  ],
+  onChanged: (val) => setState(() => selectedRole = val),
+)
+
+AppSwitchTile(
+  title: 'Enable Notifications',
+  value: isEnabled,
+  onChanged: (val) => setState(() => isEnabled = val),
+)
+```
+
+### 3. Feedback (`widgets/feedback/`)
+Standardized components for loading, empty states, and errors.
+```dart
+// Full screen loading
+if (isLoading) return const AppLoadingView();
+
+// Empty state
+if (items.isEmpty) {
+  return EmptyStateWidget(
+    title: 'No Data Found',
+    message: 'Try adjusting your filters.',
+    onActionPressed: () => fetchItems(),
+    actionText: 'Retry',
+  );
+}
+
+// Error state
+if (hasError) {
+  return ErrorStateWidget(
+    title: 'Something went wrong',
+    onRetry: () => fetchItems(),
+  );
+}
+
+// Skeleton loading for lists
+return ListView.builder(
+  itemCount: 5,
+  itemBuilder: (context, index) => const AppShimmerListTile(),
+);
+```
+
+### 4. Layout & Data Display (`widgets/layout/` & `widgets/data_display/`)
+Containers and list items with theme-aware borders and padding.
+```dart
+AppCard(
+  padding: const EdgeInsets.all(AppSpacing.md),
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const SectionHeader(title: 'Recent Activity'),
+      const AppDivider(),
+      AppListTile(
+        title: 'New Order Received',
+        subtitle: 'Order #12345',
+        leading: AppAvatar(imageUrl: 'https://...', fallbackText: 'JD'),
+        trailing: AppBadge(
+          label: 'New', 
+          color: context.semanticColors?.info,
+        ),
+      ),
+    ],
+  ),
+)
+```
+
+### 5. Services (`services/`)
+Helper classes for common UI tasks like snackbars and dialogs, plus application utilities.
+```dart
+// Show snackbar
+SnackbarHelper.showSuccess(context, 'Profile updated successfully!');
+SnackbarHelper.showError(context, 'Failed to update profile.');
+
+// Show dialog
+DialogHelper.showConfirmation(
+  context,
+  title: 'Logout',
+  message: 'Are you sure you want to log out?',
+  onConfirm: () => logout(),
+);
+
+// Logging
+LoggerService.i('User logged in successfully');
+LoggerService.e('Network request failed', error: e, stackTrace: stackTrace);
+
+// Preferences
+await sl<PreferencesService>().setString('token', myToken);
+```
+
+### 6. Data & Error Handling (`data/` & `error/`)
+Standardized way to handle domain logic and functional error handling using the `Result<T>` pattern.
+```dart
+// 1. Return a Result from a repository or use case
+Future<Result<User>> getUser() async {
+  try {
+    final user = await api.fetchUser();
+    return Ok(user);
+  } on DioException catch (e) {
+    return Error(NetworkFailure(e.message ?? 'Network Error'));
+  } catch (e) {
+    return Error(ServerFailure(e.toString()));
+  }
+}
+
+// 2. Handling Result in UI or Bloc/ViewModel
+final result = await getUser();
+result.when(
+  ok: (user) => print('Got user: ${user.name}'),
+  error: (failure) => SnackbarHelper.showError(context, failure.message),
+);
+```
+
+### 7. Dependency Injection (`di/`)
+Global service locator.
+```dart
+// Register dependencies (usually in injection.dart)
+sl.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl(sl()));
+
+// Access dependencies
+final authRepo = sl<AuthRepository>();
+```
+
+### 8. Network (`network/`)
+Pre-configured Dio client with interceptors for authentication and logging.
+```dart
+// Access the pre-configured Dio instance
+final dio = sl<DioClient>().dio;
+
+// Make a request that requires authentication (default behavior if AuthInterceptor is added)
+final response = await dio.get('/profile');
+
+// Make a public request bypassing the AuthInterceptor
+final publicResponse = await dio.get(
+  '/public-config',
+  options: Options(
+    extra: RequestExtras(requiresAuth: false).toMap(),
+  ),
+);
+```
