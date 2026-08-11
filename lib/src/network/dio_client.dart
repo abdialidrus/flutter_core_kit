@@ -1,3 +1,4 @@
+import 'package:core_kit/core_kit.dart';
 import 'package:core_kit/src/network/log_interceptor.dart';
 import 'package:dio/dio.dart';
 
@@ -100,11 +101,7 @@ class DioClient {
     Map<String, dynamic>? queryParameters,
     Options? options,
   }) {
-    return _dio.get(
-      path,
-      queryParameters: queryParameters,
-      options: options,
-    );
+    return _dio.get(path, queryParameters: queryParameters, options: options);
   }
 
   /// POST request.
@@ -168,6 +165,9 @@ class DioClient {
   }
 }
 
+/// Callback type untuk handle 401 Unauthorized
+typedef OnUnauthorizedCallback = void Function();
+
 /// Interceptor that injects an auth token into every outgoing request.
 ///
 /// The token is fetched lazily via [tokenProvider] on each request, so it
@@ -177,11 +177,13 @@ class AuthInterceptor extends Interceptor {
   final Future<String?> Function() tokenProvider;
   final String headerKey;
   final String Function(String token) headerValueBuilder;
+  final OnUnauthorizedCallback? onUnauthorized;
 
   AuthInterceptor({
     required this.tokenProvider,
     this.headerKey = 'Authorization',
     required this.headerValueBuilder,
+    this.onUnauthorized,
   });
 
   @override
@@ -194,5 +196,19 @@ class AuthInterceptor extends Interceptor {
       options.headers[headerKey] = headerValueBuilder(token);
     }
     super.onRequest(options, handler);
+  }
+
+  @override
+  void onError(DioException err, ErrorInterceptorHandler handler) {
+    if (err.response?.statusCode == 401) {
+      final shouldSkipAutoLogout =
+          err.requestOptions.extra[RequestExtras.skipAutoLogoutOn401] == true;
+
+      if (!shouldSkipAutoLogout) {
+        onUnauthorized?.call();
+      }
+    }
+
+    super.onError(err, handler);
   }
 }
