@@ -9,6 +9,8 @@ class AppCard extends StatelessWidget {
   final EdgeInsetsGeometry padding;
   final VoidCallback? onTap;
   final EdgeInsetsGeometry? margin;
+  final double elevation;
+  final Clip? clipBehavior;
 
   const AppCard({
     super.key,
@@ -16,20 +18,18 @@ class AppCard extends StatelessWidget {
     this.padding = const EdgeInsets.all(AppSpacing.cardPadding),
     this.onTap,
     this.margin,
+    this.elevation = 0,
+    this.clipBehavior,
   });
 
   @override
   Widget build(BuildContext context) {
-    final card = Card(
-      margin: margin,
-      child: Padding(padding: padding, child: child),
-    );
-
-    if (onTap == null) return card;
-
     return Card(
       margin: margin,
-      clipBehavior: Clip.antiAlias,
+      elevation: elevation,
+      clipBehavior: onTap != null && clipBehavior == null
+          ? Clip.antiAlias
+          : clipBehavior,
       child: InkWell(
         onTap: onTap,
         child: Padding(padding: padding, child: child),
