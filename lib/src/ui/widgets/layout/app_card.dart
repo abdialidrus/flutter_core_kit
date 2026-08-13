@@ -25,7 +25,7 @@ class AppCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: margin,
+      margin: margin ?? const EdgeInsets.all(0),
       elevation: elevation,
       clipBehavior: onTap != null && clipBehavior == null
           ? Clip.antiAlias
