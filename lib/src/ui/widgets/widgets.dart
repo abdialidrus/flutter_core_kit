@@ -16,6 +16,7 @@ export 'layout/app_card.dart';
 export 'layout/app_divider.dart';
 export 'layout/app_spacer.dart';
 export 'layout/section_header.dart';
+export 'layout/shimmer_skeleton.dart';
 
 export 'data_display/app_avatar.dart';
 export 'data_display/app_badge.dart';
