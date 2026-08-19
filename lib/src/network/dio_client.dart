@@ -63,19 +63,9 @@ class DioClient {
   ///   tokenProvider: () async => secureStorage.read('access_token'),
   /// );
   /// ```
-  void addAuthInterceptor({
-    required Future<String?> Function() tokenProvider,
-    String headerKey = 'Authorization',
-    String Function(String token)? headerValueBuilder,
-    OnUnauthorizedCallback? onUnauthorized,
-  }) {
+  void addAuthInterceptor({required TokenProvider tokenProvider}) {
     removeAuthInterceptor();
-    _authInterceptor = AuthInterceptor(
-      tokenProvider: tokenProvider,
-      headerKey: headerKey,
-      headerValueBuilder: headerValueBuilder ?? (token) => 'Bearer $token',
-      onUnauthorized: onUnauthorized,
-    );
+    _authInterceptor = AuthInterceptor(tokenProvider);
     _dio.interceptors.add(_authInterceptor!);
   }
 
@@ -168,48 +158,3 @@ class DioClient {
 
 /// Callback type untuk handle 401 Unauthorized
 typedef OnUnauthorizedCallback = void Function();
-
-/// Interceptor that injects an auth token into every outgoing request.
-///
-/// The token is fetched lazily via [tokenProvider] on each request, so it
-/// naturally picks up refreshed tokens without the caller needing to
-/// re-register the interceptor.
-class AuthInterceptor extends Interceptor {
-  final Future<String?> Function() tokenProvider;
-  final String headerKey;
-  final String Function(String token) headerValueBuilder;
-  final OnUnauthorizedCallback? onUnauthorized;
-
-  AuthInterceptor({
-    required this.tokenProvider,
-    this.headerKey = 'Authorization',
-    required this.headerValueBuilder,
-    this.onUnauthorized,
-  });
-
-  @override
-  void onRequest(
-    RequestOptions options,
-    RequestInterceptorHandler handler,
-  ) async {
-    final token = await tokenProvider();
-    if (token != null && token.isNotEmpty) {
-      options.headers[headerKey] = headerValueBuilder(token);
-    }
-    super.onRequest(options, handler);
-  }
-
-  @override
-  void onError(DioException err, ErrorInterceptorHandler handler) {
-    if (err.response?.statusCode == 401) {
-      final shouldSkipAutoLogout =
-          err.requestOptions.extra[RequestExtras.skipAutoLogoutOn401] == true;
-
-      if (!shouldSkipAutoLogout) {
-        onUnauthorized?.call();
-      }
-    }
-
-    super.onError(err, handler);
-  }
-}

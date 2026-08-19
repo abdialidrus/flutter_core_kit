@@ -13,7 +13,7 @@ class AuthInterceptor extends Interceptor {
   ) async {
     final token = await tokenProvider.fetchToken();
     if (token != null) {
-      options.headers['Authorization'] = 'Bearer $token';
+      options.headers['Authorization'] = token;
     }
     super.onRequest(options, handler);
   }
