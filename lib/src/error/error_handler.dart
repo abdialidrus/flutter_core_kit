@@ -99,7 +99,7 @@ class ErrorHandler {
   /// Handle generic exceptions
   static Failure handleException(Object e, String? fallbackMessage) {
     if (e is DioException) {
-      return handleDioException(e);
+      return handleDioException(e, fallbackMessage: fallbackMessage);
     }
     return UnexpectedFailure(
       fallbackMessage ?? 'Unexpected error: ${e.toString()}',
