@@ -97,7 +97,7 @@ class ErrorHandler {
   }
 
   /// Handle generic exceptions
-  static Failure handleException(Object e, String? fallbackMessage) {
+  static Failure handleException(Object e, {String? fallbackMessage}) {
     if (e is DioException) {
       return handleDioException(e, fallbackMessage: fallbackMessage);
     }
