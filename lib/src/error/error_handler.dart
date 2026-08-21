@@ -5,31 +5,36 @@ import 'package:dio/dio.dart';
 /// Converts DioException to appropriate Failure types
 class ErrorHandler {
   /// Handle Dio exceptions and convert to Failure
-  static Failure handleDioException(DioException e) {
+  static Failure handleDioException(DioException e, {String? fallbackMessage}) {
     switch (e.type) {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
-        return const NetworkFailure('Connection timeout. Please try again.');
+        return NetworkFailure(
+          fallbackMessage ?? 'Connection timeout. Please try again.',
+        );
 
       case DioExceptionType.badResponse:
-        return _handleBadResponse(e);
+        return _handleBadResponse(e, fallbackMessage: fallbackMessage);
 
       case DioExceptionType.connectionError:
-        return const NetworkFailure(
-          'No internet connection. Please check your network.',
+        return NetworkFailure(
+          fallbackMessage ??
+              'No internet connection. Please check your network.',
         );
 
       case DioExceptionType.cancel:
-        return const ClientFailure('Request cancelled');
+        return ClientFailure(fallbackMessage ?? 'Request cancelled');
 
       default:
-        return ServerFailure(e.message ?? 'Something went wrong');
+        return ServerFailure(
+          e.message ?? fallbackMessage ?? 'Something went wrong',
+        );
     }
   }
 
   /// Handle bad response based on status code
-  static Failure _handleBadResponse(DioException e) {
+  static Failure _handleBadResponse(DioException e, {String? fallbackMessage}) {
     final statusCode = e.response?.statusCode;
     final responseData = e.response?.data;
 
@@ -43,41 +48,61 @@ class ErrorHandler {
 
     switch (statusCode) {
       case 400:
-        return ClientFailure(errorMessage ?? 'Bad request');
+        return ClientFailure(errorMessage ?? fallbackMessage ?? 'Bad request');
 
       case 401:
         return ClientFailure(
-          errorMessage ?? 'Unauthorized. Please login again.',
+          errorMessage ??
+              fallbackMessage ??
+              'Unauthorized. Please login again.',
         );
 
       case 403:
-        return const ClientFailure('Forbidden. You don\'t have permission.');
+        return ClientFailure(
+          errorMessage ??
+              fallbackMessage ??
+              'Forbidden. You don\'t have permission.',
+        );
 
       case 404:
-        return ClientFailure(errorMessage ?? 'Resource not found');
+        return ClientFailure(
+          errorMessage ?? fallbackMessage ?? 'Resource not found',
+        );
 
       case 422:
-        return ClientFailure(errorMessage ?? 'Validation error');
+        return ClientFailure(
+          errorMessage ?? fallbackMessage ?? 'Validation error',
+        );
 
       case 500:
-        return const ServerFailure('Server error. Please try again later.');
+        return ServerFailure(
+          fallbackMessage ?? 'Server error. Please try again later.',
+        );
 
       case 502:
-        return const ServerFailure('Bad gateway. Server is unreachable.');
+        return ServerFailure(
+          fallbackMessage ?? 'Bad gateway. Server is unreachable.',
+        );
 
       case 503:
-        return const ServerFailure('Service unavailable. Try again later.');
+        return ServerFailure(
+          fallbackMessage ?? 'Service unavailable. Try again later.',
+        );
 
       default:
-        return ClientFailure(errorMessage ?? 'Request failed');
+        return ClientFailure(
+          errorMessage ?? fallbackMessage ?? 'Request failed',
+        );
     }
   }
 
   /// Handle generic exceptions
-  static Failure handleException(Object e) {
+  static Failure handleException(Object e, String? fallbackMessage) {
     if (e is DioException) {
       return handleDioException(e);
     }
-    return UnexpectedFailure('Unexpected error: ${e.toString()}');
+    return UnexpectedFailure(
+      fallbackMessage ?? 'Unexpected error: ${e.toString()}',
+    );
   }
 }
